@@ -15,8 +15,8 @@ import csv
 
 cardinalities=[]
 
+# Returns a random number in the range between 0..cardinality-1
 def randomUnderCardinality(index):    
-    
     return random.randint(0,cardinalities[index]-1)
 
 def initRepeatWithCardinalities(container, func, n):
@@ -26,29 +26,20 @@ def main():
    
     with open('data-tree-eda.csv') as csvfile:
         readCSV = csv.reader(csvfile, delimiter=',')
-        
-        # Get the required parameters  from the first line of data.csv  
+        # Get the required parameters  from the first line of data-tree-eda.csv  
         row=next(readCSV)   
         nCheckboard=int(row[0])
         mCheckboard=int(row[1])
         sizesel=int(row[2])
         populSize=int(row[3])
         numgen=int(row[4])
-
-        # Get the cardinalities from the second line of data.csv  
-       
+        # Get the cardinalities from the second line of data-tree-eda.csv  
         row=next(readCSV)   
         for line in range(len(row)):
             cardinalities.append(int(row[line]))
-        #print(cardinalities)
     
-
-
-    # Dimensions of the checkboard which determine the size of the individual
-   
-    numberOfVariables=nCheckboard*mCheckboard
-
-
+    # Dimensions of the checkboard determine the size of the individual
+    numberOfVariables = nCheckboard * mCheckboard
 
     creator.create("FitnessMax", base.Fitness, weights=(1.0,))
     creator.create("Individual", array.array, typecode='b', fitness=creator.FitnessMax)
@@ -56,7 +47,7 @@ def main():
     toolbox = base.Toolbox()
 
     # Structure initializers
-    toolbox.register("individual", initRepeatWithCardinalities, creator.Individual,  randomUnderCardinality, int(nCheckboard)*int(mCheckboard))
+    toolbox.register("individual", initRepeatWithCardinalities, creator.Individual, randomUnderCardinality, numberOfVariables)
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
     toolbox.register("evaluate", bd.evalCheckboardNeighbours,nCB=nCheckboard,mCB=nCheckboard)
     toolbox.register("select", tools.selBest)
