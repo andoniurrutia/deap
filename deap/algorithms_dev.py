@@ -21,7 +21,7 @@ vectorProbabilities=[]
 
 
 def initCardinality(card):
-# Thus function initializes the array of cardinalities    
+# This function initializes the array of cardinalities    
     global cardinalities
     cardinalities=card
 
@@ -127,31 +127,10 @@ data = {"x0": [], "x1": [],"value0": [], "value1": [],"amount": []}
 df = pd.DataFrame(data)
 
 
-def init(value,numvarInit,popInit,card):
-# This function initializes the data structures that the algorithm is going to use. 
-# Params: 
-#   value: the initial value that it is going to be assigned to all the elements of the Frequency Matrix 
-#   numvarInit: sizes of the population individuals
-#   popInit: initial population
- 
-    global numvar
-    global newIndividual
-    global population
-    global cardinalities
 
 
-    population=popInit           
-     
-    numvar=numvarInit 
-    newIndividual=[0]*numvar
-     
-    for i in range(numvar):
-        for j in range(i+1,numvar):
-          fm.update({(i,j):np.array([value]*posVarPairsValues)})  
-    cardinalities=card
 
-
-def init(value,numvarInit,popInit,card):
+def initForTreeEDA(value,numvarInit,popInit,card):
 # This function initializes the data structures that the algorithm is going to use. 
 # Params: 
 #   value: the initial value that it is going to be assigned to all the elements of the Frequency Matrix 
@@ -429,7 +408,7 @@ def traverseTree(T, vbse=False):
    
 def treeEDA(population,toolbox, sizeSel,card,ngen, halloffame=None, stats=None,verbose=__debug__,vbse=False):
 # This function executes the treeEDA algorithm     
-    init(0,len(population[0]), population,card)
+    initForTreeEDA(0,len(population[0]), population,card)
  
     addFrequenciestoMatrix(population) 
     logbook = tools.Logbook() 
