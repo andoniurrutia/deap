@@ -22,10 +22,10 @@ def initRepeatWithCardinalities(container, func, n):
    
 def main():
    
-    with open('data.csv') as csvfile:
+    with open('data-umda.csv') as csvfile:
         readCSV = csv.reader(csvfile, delimiter=',')
         
-        # Get the required parameters  from the first line of data.csv  
+        # Get the required parameters  from the first line of data-umda.csv  
         row=next(readCSV)   
         nCheckboard=int(row[0])
         mCheckboard=int(row[1])
@@ -33,7 +33,7 @@ def main():
         populSize=int(row[3])
         numgen=int(row[4])
 
-        # Get the cardinalities from the second line of data.csv  
+        # Get the cardinalities from the second line of data-umda.csv  
        
         row=next(readCSV)   
         for line in range(len(row)):
