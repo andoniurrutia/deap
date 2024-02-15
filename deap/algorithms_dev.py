@@ -16,14 +16,14 @@ import matplotlib.pyplot as plt
 UMDA ALGORITHM AND AUXILIAR FUNCTIONS
 #################################################################################################
 '''
-cardinalities=[]
+cardinalitiesUMDA=[]
 vectorProbabilities=[]
 
 
 def initCardinality(card):
 # This function initializes the array of cardinalities    
-    global cardinalities
-    cardinalities=card
+    global cardinalitiesUMDA
+    cardinalitiesUMDA=card
 
 
 def createModel(popul):
@@ -34,8 +34,8 @@ def createModel(popul):
     counterProbabilities= [None]*numberOfVariables
     for i in range(numberOfVariables):
         counterProbabilities=Counter(np.transpose(popul)[i])
-        for j in range(cardinalities[i]):    
-           vectorProbabilities[i][j]= (1 + counterProbabilities[j])/(len(popul)+cardinalities[i])
+        for j in range(cardinalitiesUMDA[i]):    
+           vectorProbabilities[i][j]= (1 + counterProbabilities[j])/(len(popul)+cardinalitiesUMDA[i])
           
 
 def generateNewPopulation(population):
@@ -47,7 +47,7 @@ def generateNewPopulation(population):
     for i in range(len(population)):
         for j in range(numberOfVariables):
             #print(vectorProbabilities[j]) 
-            population[i][j]=np.random.choice(cardinalities[j],p=vectorProbabilities[j])
+            population[i][j]=np.random.choice(cardinalitiesUMDA[j],p=vectorProbabilities[j])
 
     return population
 
@@ -62,7 +62,7 @@ def umda(population, toolbox, sizesel,card, ngen, halloffame=None, stats=None,ve
 
     for i in range(numberOfVariables):
         #vectorProbabilities=np.zeros((numberOfVariables,maxValue+1))
-        vectorProbabilities.append( [0]*cardinalities[i] )
+        vectorProbabilities.append( [0]*cardinalitiesUMDA[i] )
     #Fill the vector with 0s.
 
 
@@ -100,122 +100,129 @@ TREE-EDA ALGORITHM AND AUXILIAR FUNCTIONS
 #################################################################################################
 '''
 
-###
-#Idea for entire numbers: posVarPairsValues
-#cardinality 0:2 and cardinality 1:3
-#The Frequency Matrix (0,1) -->[(0,0)-->N,(0,1)-->N2,(0,2)-->N,1,0,1,1,1,2]
-# at generation time is when we look at the cardinalities
-#fm={(0,1):[[0,0,2],[0,1,3]]}
-
-#fm=[[0,1,0,1,1]]
-#df.loc[df['a'] == 1, 'b'].sum()
-# FM(Frequency Matrix) stores the frequencies of all x0x1=00,01,10,11 combinations for every pair of variables x0,x1
-fm={}
-
-#Possible variable pair values: 00,01,10,11
-posVarPairsValues=4
-
-#Number of variables of the population individuals. It will be initialized by the init functions
-numvar=0
-
-#List data structure to store populations and an auxiliar list to fill with individuals data while 
-#traversing the tree
-population=[]
-newIndividual=[]
-
+# FM(Frequency Matrix) stores in the amout the frequencies that a variable0 has a value0, when the variable1 is value1
 data = {"x0": [], "x1": [],"value0": [], "value1": [],"amount": []}
-df = pd.DataFrame(data)
+fm = pd.DataFrame(data)
 
+# Number of variables of the population individuals. It will be initialized by the init functions
+numvar = 0
+population=[]
+# Auxiliar list to fill with individual data while traversing the tree
+newIndividual=[]
+cardinalitiesTree=[]
 
-
-
-
-def initForTreeEDA(value,numvarInit,popInit,card):
-# This function initializes the data structures that the algorithm is going to use. 
-# Params: 
-#   value: the initial value that it is going to be assigned to all the elements of the Frequency Matrix 
-#   numvarInit: sizes of the population individuals
-#   popInit: initial population
-
+def treeEDA(pop, toolbox, sizeSel, card, ngen, halloffame=None, stats=None,verbose=__debug__,vbse=False):
+# Executes the treeEDA algorithm     
+    
+    global population 
     global numvar
     global newIndividual
-    global population
-    global df
-    global data
-    global cardinalities
-    
-    population=popInit           
-    cardinalities=card
-    numvar=numvarInit 
+    global cardinalitiesTree
+    population = pop
+    numvar = len(population[0])
     newIndividual=[0]*numvar
+    cardinalitiesTree = card
     
+    initFrequencyMatrix()
+    addFrequenciestoMatrix(population) 
+    logbook = tools.Logbook() 
+    logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
+    
+    for gen in range (ngen):
+        # The model is created from the data stored in the Frequency Matrix.
+        tree=createMSPfromMI(verbose=False)
+        
+        # We traverse the tree populationSize times. In every loop a new individual is added to the population
+        for i in range(len(population)):
+            traverseTree(tree,vbse=False)
+            for j in range(numvar):
+                population[i][j]=newIndividual[j]
+        
+        # We analyze the fitness according to the benchmark function
+        fitnesses = toolbox.map(toolbox.evaluate, population)
+        for ind, fit in zip(population, fitnesses):
+                ind.fitness.values = fit
+
+        # Select sizeSel individuals according to the best fitness
+        selPop= toolbox.select(population, sizeSel)        
+        
+        record = stats.compile(population) if stats is not None else {}
+        logbook.record(gen=gen, nevals=len(population), **record)
+        if verbose:
+                  print(logbook.stream)
+        #Apply the decay factor to all elements of the frequency matrix
+        applyDecayfactor(0.99)
+        
+        # We add the frequencies to the matrix from the selected population 
+        addFrequenciestoMatrix(selPop) 
+    
+    return population, logbook
+
+def initFrequencyMatrix():
+# Initializes all 'amount' values of the frequenty matrix to 0. 
+    global numvar
+    global cardinalitiesTree
+    global fm
+    global data
+    
+    newIndividual=[0]*numvar
     for i in range(numvar):
         for j in range(i+1,numvar):
-             
-             for k in range(cardinalities[i]):
-                 for h in range(cardinalities[j]):
-                   
+             for k in range(cardinalitiesTree[i]):
+                 for h in range(cardinalitiesTree[j]):
                     data["x0"].append(i)
                     data["x1"].append(j)  
                     data["value0"].append(k) 
                     data["value1"].append(h)  
-                    data["amount"].append(value) 
+                    data["amount"].append(0) 
+    fm = pd.DataFrame(data)
 
-    #print(data)    
-    df = pd.DataFrame(data)
-    
+def addFrequenciestoMatrix(selectedPop):
+    global fm
+    for i in range(numvar):
+        for j in range(i+1,numvar):
+            for k in range(len(selectedPop)):
+               fm.loc[(fm['x0'] == i) & (fm['x1'] == j)& (fm['value0'] == selectedPop[k][i]) & (fm['value1'] == selectedPop[k][j]),'amount']+=1   
               
 def getUnivariate(x,value):
-    # Returns the univariate frequency of the given x variable
+# Returns the univariate frequency in the frequency matrix for the given 'x' variable and 'value' value
     
-    propFreq=1/cardinalities[x]
-    total=df.loc[(df['x0'] == 0) & (df['x1'] == 1),'amount'].sum()
-    #print("TOTAL IS"+str(total))
-  
-    
-        
+    propFreq=1/cardinalitiesTree[x]
+    total=fm.loc[(fm['x0'] == 0) & (fm['x1'] == 1),'amount'].sum()
     # In the case of x=0, it makes no sense to look for fm[(0,0)]. We use the data of fm[(0,1)], adjsuting 
     # the indexes so that returns the values of the X0 bit and not X1. 
     if total!=0:
         if x>0:
-       
-            freq= df.loc[(df['x1'] == x) & (df['x0']==0) & (df['value1']==value) , 'amount'].sum()/total
+            freq= fm.loc[(fm['x1'] == x) & (fm['x0']==0) & (fm['value1']==value) , 'amount'].sum()/total
         else:    
-            freq= df.loc[(df['x1'] == 1) & (df['x0']==0) & (df['value0']==value) , 'amount'].sum()/total
-
-    
+            freq= fm.loc[(fm['x1'] == 1) & (fm['x0']==0) & (fm['value0']==value) , 'amount'].sum()/total
         return freq
     else:
-        return 1/cardinalities[x]
-        #return 0
-
-
+        return 1/cardinalitiesTree[x]
+        
 def getConditionalFrequency(x0,x1,value0,value1):
 # Returns a list with the frequency for x0=0,x0=1 values, giving fixed that x1=value1
 
-    propFreq=1/cardinalities[x0]
+    propFreq=1/cardinalitiesTree[x0]
     if x0>x1: 
         x0,x1=x1,x0
         value0,value1=value1,value0
-        normTotal=df.loc[(df['x0']==x0) & (df['x1'] == x1) & (df['value0']==value0 ), 'amount'].sum()  
+        normTotal=fm.loc[(fm['x0']==x0) & (fm['x1'] == x1) & (fm['value0']==value0 ), 'amount'].sum()  
         
     else:
-        normTotal=df.loc[(df['x0']==x0) & (df['x1'] == x1)  & (df['value1']==value1 ), 'amount'].sum()
+        normTotal=fm.loc[(fm['x0']==x0) & (fm['x1'] == x1)  & (fm['value1']==value1 ), 'amount'].sum()
     
     if normTotal!=0:
             
-            freq= df.loc[(df['x0']==x0) &  (df['x1'] == x1) &(df['value0']==value0) & (df['value1']==value1 ), 'amount'].sum()/normTotal
+            freq= fm.loc[(fm['x0']==x0) &  (fm['x1'] == x1) &(fm['value0']==value0) & (fm['value1']==value1 ), 'amount'].sum()/normTotal
             return freq
     else:
             return propFreq
    
-       
-      
-
 def getBivariate(x0,x1,value0,value1):
-    total=df.loc[(df['x0'] == 0)& (df['x1'] == 1) ,'amount'].sum()
+    total=fm.loc[(fm['x0'] == 0)& (fm['x1'] == 1) ,'amount'].sum()
     if total!=0:
-        return df.loc[(df['x0']==x0) & (df['x1']==x1) & (df['value0']==value0) & (df['value1']==value1),'amount'].sum()/total
+        return fm.loc[(fm['x0']==x0) & (fm['x1']==x1) & (fm['value0']==value0) & (fm['value1']==value1),'amount'].sum()/total
     else:
         return 0
 
@@ -226,8 +233,8 @@ def getMutualInfo(x0,x1):
         x0,x1=x1,x0
     mutual=0
    
-    for value0 in range(cardinalities[x0]): 
-        for value1 in range(cardinalities[x1]):
+    for value0 in range(cardinalitiesTree[x0]): 
+        for value1 in range(cardinalitiesTree[x1]):
            # print("n.a Bivariate/Univariate values when X0X1="+str(value0)+str(value1))
            # print(getUnivariateInteger(x0,value0),getUnivariateInteger(x1,value1),getBivariate(x0,x1,value0,value1))
             if (getBivariate(x0,x1,value0,value1)!=0 and getUnivariate(x0,value0)!=0 and getUnivariate(x1,value1)!=0):
@@ -284,7 +291,7 @@ def dfs_edges(G, source=None, depth_limit=None, vbse=False):
         stack = [(start, depth_limit, iter(G[start]))]
         fqList=[]
         frequencyList=[]
-        for freq1 in range(cardinalities[start]):
+        for freq1 in range(cardinalitiesTree[start]):
             fqList.append(getUnivariate(start,freq1))
         newIndividual[start]=np.random.choice(len(fqList),p=fqList)
         
@@ -301,7 +308,7 @@ def dfs_edges(G, source=None, depth_limit=None, vbse=False):
                     if depth_now > 1:
                         
                         stack.append((child, depth_now - 1, iter(G[child])))
-                        for freq in range(cardinalities[child]):
+                        for freq in range(cardinalitiesTree[child]):
                             frequencyList.append(getConditionalFrequency(child,parent,freq,newIndividual[parent]))
                         newIndividual[child]=np.random.choice(len(frequencyList),p=frequencyList)
                         frequencyList=[]
@@ -359,16 +366,11 @@ def dfs_successors(G, source=None, depth_limit=None, vbse=False):
 
 def applyDecayfactor(factor):
 # Decreases the values of all elements of the frequency matrix by a given factor 
-    global df
-    df['amount'] *= factor
+    global fm
+    fm['amount'] *= factor
    
 
-def addFrequenciestoMatrix(selectedPop):
-    global df
-    for i in range(numvar):
-        for j in range(i+1,numvar):
-            for k in range(len(selectedPop)):
-               df.loc[(df['x0'] == i) & (df['x1'] == j)& (df['value0'] == selectedPop[k][i]) & (df['value1'] == selectedPop[k][j]),'amount']+=1
+
                
 def createMSPfromMI(verbose=False):
 # This function creates a graph which contains the minimum spanning tree. In order to do so, it iterates all the variable-pair combinations 
@@ -392,8 +394,8 @@ def createMSPfromMI(verbose=False):
          print(nx.minimum_spanning_tree(MIGraph).edges(data=True))
          print("\n")
     
-    nx.draw_networkx(nx.minimum_spanning_tree(MIGraph),cmap = plt.get_cmap('jet'),with_labels=True,pos=nx.spring_layout(nx.minimum_spanning_tree(MIGraph)))
-    plt.show() 
+    #nx.draw_networkx(nx.minimum_spanning_tree(MIGraph),cmap = plt.get_cmap('jet'),with_labels=True,pos=nx.spring_layout(nx.minimum_spanning_tree(MIGraph)))
+    #plt.show() 
     
     return nx.minimum_spanning_tree(MIGraph)
 
@@ -404,41 +406,3 @@ def traverseTree(T, vbse=False):
         
     
    
-def treeEDA(population,toolbox, sizeSel,card,ngen, halloffame=None, stats=None,verbose=__debug__,vbse=False):
-# This function executes the treeEDA algorithm     
-    initForTreeEDA(0,len(population[0]), population,card)
- 
-    addFrequenciestoMatrix(population) 
-    logbook = tools.Logbook() 
-    logbook.header = ['gen', 'nevals'] + (stats.fields if stats else [])
-    
-    for gen in range (ngen):
-        # The model is created from the data stored in the Frequency Matrix.
-        tree=createMSPfromMI(verbose=False)
-        
-        # We traverse the tree populationSize times. In every loop a new individual is added to the population
-        for i in range(len(population)):
-            traverseTree(tree,vbse=False)
-            for j in range(numvar):
-                population[i][j]=newIndividual[j]
-        
-        # We analyze the fitness according to the benchmark function
-        fitnesses = toolbox.map(toolbox.evaluate, population)
-        for ind, fit in zip(population, fitnesses):
-                ind.fitness.values = fit
-
-        # Select sizeOfSelection individuals according to the best fitness
-        sizeOfSelection=sizeSel
-        selPop= toolbox.select(population, sizeOfSelection)        
-        
-        record = stats.compile(population) if stats is not None else {}
-        logbook.record(gen=gen, nevals=len(population), **record)
-        if verbose:
-                  print(logbook.stream)
-        #Apply the decay factor to all elements of the frequency matrix
-        applyDecayfactor(0.99)
-        
-        # We add the frequencies to the matrix from the selected population 
-        addFrequenciestoMatrix(selPop) 
-    
-    return population, logbook
