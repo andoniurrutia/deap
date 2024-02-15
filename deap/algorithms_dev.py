@@ -359,10 +359,8 @@ def dfs_successors(G, source=None, depth_limit=None, vbse=False):
 
 def applyDecayfactor(factor):
 # Decreases the values of all elements of the frequency matrix by a given factor 
-   
-    global fm
-    for key in fm:
-            fm[key]*=factor
+    global df
+    df['amount'] *= factor
    
 
 def addFrequenciestoMatrix(selectedPop):
