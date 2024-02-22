@@ -100,10 +100,23 @@ TREE-EDA ALGORITHM AND AUXILIAR FUNCTIONS
 #################################################################################################
 '''
 
-# FM(Frequency Matrix) stores in the amout the frequencies that a variable0 has a value0, when the variable1 is value1
-data = {"x0": [], "x1": [],"value0": [], "value1": [],"amount": []}
-fm = pd.DataFrame(data)
 
+# FM(Frequency Matrix) stores in the amout the frequencies that a variable0 has a value0, when the variable1 is value1
+data = {"x0": [], "x1": [],"value0": [], "value1": [],"frequency": []}
+fm = pd.DataFrame(data)
+""""
+data = {"x0": [0,1], "x1": [1,2],"value0": [1,0], "value1": [6,6],"frequency": [2,25]}
+Meaning:the frequency of x0=1, being x1=6 is 2
+Meaning:the frequency of x1=0, being x2=6 is 25
+
+NOTE: alternatively we could use numpy arrays instead of pandas dataframes to store the frequencies.
+fm = np.array([
+    [0, 1, 1, 6, 2],
+    [1, 2, 0, 6, 25]
+    ...
+])
+
+"""
 # Number of variables of the population individuals. It will be initialized by the init functions
 numvar = 0
 population=[]
@@ -159,7 +172,7 @@ def treeEDA(pop, toolbox, sizeSel, card, ngen, halloffame=None, stats=None,verbo
     return population, logbook
 
 def initFrequencyMatrix():
-# Initializes all 'amount' values of the frequenty matrix to 0. 
+# Initializes all 'frequency' values of the frequenty matrix to 0. 
     global numvar
     global cardinalitiesTree
     global fm
@@ -174,7 +187,7 @@ def initFrequencyMatrix():
                     data["x1"].append(j)  
                     data["value0"].append(k) 
                     data["value1"].append(h)  
-                    data["amount"].append(0) 
+                    data["frequency"].append(0) 
     fm = pd.DataFrame(data)
 
 def addFrequenciestoMatrix(selectedPop):
@@ -182,20 +195,20 @@ def addFrequenciestoMatrix(selectedPop):
     for i in range(numvar):
         for j in range(i+1,numvar):
             for k in range(len(selectedPop)):
-               fm.loc[(fm['x0'] == i) & (fm['x1'] == j)& (fm['value0'] == selectedPop[k][i]) & (fm['value1'] == selectedPop[k][j]),'amount']+=1   
+               fm.loc[(fm['x0'] == i) & (fm['x1'] == j)& (fm['value0'] == selectedPop[k][i]) & (fm['value1'] == selectedPop[k][j]),'frequency']+=1   
               
 def getUnivariate(x,value):
 # Returns the univariate frequency in the frequency matrix for the given 'x' variable and 'value' value
     
     propFreq=1/cardinalitiesTree[x]
-    total=fm.loc[(fm['x0'] == 0) & (fm['x1'] == 1),'amount'].sum()
+    total=fm.loc[(fm['x0'] == 0) & (fm['x1'] == 1),'frequency'].sum()
     # In the case of x=0, it makes no sense to look for fm[(0,0)]. We use the data of fm[(0,1)], adjsuting 
     # the indexes so that returns the values of the X0 bit and not X1. 
     if total!=0:
         if x>0:
-            freq= fm.loc[(fm['x1'] == x) & (fm['x0']==0) & (fm['value1']==value) , 'amount'].sum()/total
+            freq= fm.loc[(fm['x1'] == x) & (fm['x0']==0) & (fm['value1']==value) , 'frequency'].sum()/total
         else:    
-            freq= fm.loc[(fm['x1'] == 1) & (fm['x0']==0) & (fm['value0']==value) , 'amount'].sum()/total
+            freq= fm.loc[(fm['x1'] == 1) & (fm['x0']==0) & (fm['value0']==value) , 'frequency'].sum()/total
         return freq
     else:
         return 1/cardinalitiesTree[x]
@@ -207,22 +220,22 @@ def getConditionalFrequency(x0,x1,value0,value1):
     if x0>x1: 
         x0,x1=x1,x0
         value0,value1=value1,value0
-        normTotal=fm.loc[(fm['x0']==x0) & (fm['x1'] == x1) & (fm['value0']==value0 ), 'amount'].sum()  
+        normTotal=fm.loc[(fm['x0']==x0) & (fm['x1'] == x1) & (fm['value0']==value0 ), 'frequency'].sum()  
         
     else:
-        normTotal=fm.loc[(fm['x0']==x0) & (fm['x1'] == x1)  & (fm['value1']==value1 ), 'amount'].sum()
+        normTotal=fm.loc[(fm['x0']==x0) & (fm['x1'] == x1)  & (fm['value1']==value1 ), 'frequency'].sum()
     
     if normTotal!=0:
             
-            freq= fm.loc[(fm['x0']==x0) &  (fm['x1'] == x1) &(fm['value0']==value0) & (fm['value1']==value1 ), 'amount'].sum()/normTotal
+            freq= fm.loc[(fm['x0']==x0) &  (fm['x1'] == x1) &(fm['value0']==value0) & (fm['value1']==value1 ), 'frequency'].sum()/normTotal
             return freq
     else:
             return propFreq
    
 def getBivariate(x0,x1,value0,value1):
-    total=fm.loc[(fm['x0'] == 0)& (fm['x1'] == 1) ,'amount'].sum()
+    total=fm.loc[(fm['x0'] == 0)& (fm['x1'] == 1) ,'frequency'].sum()
     if total!=0:
-        return fm.loc[(fm['x0']==x0) & (fm['x1']==x1) & (fm['value0']==value0) & (fm['value1']==value1),'amount'].sum()/total
+        return fm.loc[(fm['x0']==x0) & (fm['x1']==x1) & (fm['value0']==value0) & (fm['value1']==value1),'frequency'].sum()/total
     else:
         return 0
 
@@ -367,7 +380,7 @@ def dfs_successors(G, source=None, depth_limit=None, vbse=False):
 def applyDecayfactor(factor):
 # Decreases the values of all elements of the frequency matrix by a given factor 
     global fm
-    fm['amount'] *= factor
+    fm['frequency'] *= factor
    
 
 
