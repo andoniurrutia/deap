@@ -17,3 +17,18 @@ def evalCheckboardNeighbours(individual,nCB,mCB):
                 counter=counter+1
     return counter,
 
+def rastrigin(x):
+    """
+    Rastrigin Function
+
+    Parameters:
+    x : numpy array
+        Input vector.
+
+    Returns:
+    float
+        VAlue of the Rastrigin function at point x.
+    """
+    A = 10
+    n = len(x)
+    return A * n + np.sum(x**2 - A * np.cos(2 * np.pi * x))
