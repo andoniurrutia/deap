@@ -66,3 +66,20 @@ def griewank_function(x):
     sum_value = np.sum(x**2) / 4000
     prod_value = np.prod(np.cos(x / np.sqrt(np.arange(1, n + 1))))
     return sum_value - prod_value + 1
+
+def michalewicz_function(x, m=10):
+    """
+    Michalewicz function.
+
+    Parameters:
+    x : numpy array
+        Input vector.
+    m : int, optional
+        The parameter "m" controls the steepness of the valleys.
+
+    Returns:
+    float
+        Value of the function at point x.
+    """
+    n = len(x)
+    return -np.sum(np.sin(x) * (np.sin(((np.arange(1, n + 1) * x**2) / np.pi))**(2 * m)))
