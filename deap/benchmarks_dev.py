@@ -49,3 +49,20 @@ def rosenbrock_function(x):
     for i in range(len(x) - 1):
         value += 100 * (x[i+1] - x[i]**2)**2 + (1 - x[i])**2
     return value
+
+def griewank_function(x):
+    """
+    Griewank Function
+
+    Parameters:
+    x : numpy array
+        Input vector.
+
+    Returns:
+    float
+        Value of the function at point x.
+    """
+    n = len(x)
+    sum_value = np.sum(x**2) / 4000
+    prod_value = np.prod(np.cos(x / np.sqrt(np.arange(1, n + 1))))
+    return sum_value - prod_value + 1
