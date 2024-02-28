@@ -27,8 +27,25 @@ def rastrigin(x):
 
     Returns:
     float
-        VAlue of the Rastrigin function at point x.
+        Value of the Rastrigin function at point x.
     """
     A = 10
     n = len(x)
     return A * n + np.sum(x**2 - A * np.cos(2 * np.pi * x))
+
+def rosenbrock_function(x):
+    """
+    Calculate the value of Rosenbrock function for a given point x.
+    
+    Parameters:
+    x : numpy array
+        Input vector.
+        
+    Returns:
+    float
+        Rosenbrock function at point x.
+    """
+    value = 0
+    for i in range(len(x) - 1):
+        value += 100 * (x[i+1] - x[i]**2)**2 + (1 - x[i])**2
+    return value
