@@ -9,7 +9,9 @@ from deap import tools
 from collections import Counter
 import pandas as pd
 import matplotlib.pyplot as plt
-
+from pgmpy.models import BayesianModel
+from pgmpy.factors.discrete import TabularCPD
+from pgmpy.inference import VariableElimination
 
 '''
 #################################################################################################
@@ -416,6 +418,40 @@ def createMSPfromMI(verbose=False):
 def traverseTree(T, vbse=False):
 # Traverse the tree for creating the new individuals
     dfs_successors(T,vbse=vbse)
+
+'''
+#################################################################################################
+BAYES-BASED-EDA ALGORITHM AND AUXILIAR FUNCTIONS
+#################################################################################################
+'''
+
+
+# Define the structure of the Bayesian network with 4 variables var1, var2, var2, var4
+monty_model = BayesianModel([('var2', 'var1'), 
+                             ('var2', 'var1'), 
+                             ('var3', 'var1')])
+
+# Define conditional probability distributions (CPDs)
+cpd_contestant = TabularCPD(variable='Contestant', variable_card=3, values=[[1/3, 1/3, 1/3]])
+cpd_prize = TabularCPD(variable='Prize', variable_card=3, values=[[1/3, 1/3, 1/3]])
+cpd_host = TabularCPD(variable='Host', variable_card=3,
+                      values=[[0, 0, 0, 0, 0.5, 1, 0, 1, 0.5],
+                              [0.5, 0, 1, 0, 0, 0, 1, 0, 0.5],
+                              [0.5, 1, 0, 1, 0.5, 0, 0, 0, 0]],
+                      evidence=['Contestant', 'Prize'],
+                      evidence_card=[3, 3])
+
+# Add CPDs to the model
+monty_model.add_cpds(cpd_contestant, cpd_prize, cpd_host)
+
+# Check if the model is consistent
+print(monty_model.check_model())
+
+# Perform inference
+inference = VariableElimination(monty_model)
+posterior = inference.query(variables=['Prize'], evidence={'Contestant': 0})
+print(posterior)
         
+def bayes(population, toolbox, sizesel, card, ngen, halloffame=None, stats=None,verbose=__debug__):
     
-   
+return population, logbook   
