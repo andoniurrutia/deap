@@ -17,7 +17,8 @@ cardinalities=[]
 
 # Returns a random number in the range between 0..cardinality-1
 def randomUnderCardinality(index):    
-    return random.randint(0,cardinalities[index]-1)
+    #return random.randint(0,cardinalities[index]-1)
+    return random.randint(0,5)
 
 def initRepeatWithCardinalities(container, func, n):
     return container(func(i) for i in range(n))
@@ -33,10 +34,16 @@ def main():
         sizesel=int(row[2])
         populSize=int(row[3])
         numgen=int(row[4])
+
+        row=next(readCSV)
+        cardinality = int(row[0])   
         # Get the cardinalities from the second line of data-tree-eda.csv  
-        row=next(readCSV)   
-        for line in range(len(row)):
-            cardinalities.append(int(row[line]))
+        
+        if (cardinality == 0):
+            row=next(readCSV)   
+            for line in range(len(row)):
+                cardinalities.append(int(row[line]))
+        else: cardinalities = [cardinality] * (nCheckboard*mCheckboard) 
     
     # Dimensions of the checkboard determine the size of the individual
     numberOfVariables = nCheckboard * mCheckboard
